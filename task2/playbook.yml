@@ -22,6 +22,7 @@
         name: docker
         state: started
         enabled: yes
+      when: not ansible_check_mode
 
     - name: Download kubectl
       get_url:
@@ -45,45 +46,58 @@
       shell: /tmp/get_helm.sh
       args:
         executable: /bin/bash
+      when: not ansible_check_mode
 
     - name: Start Minikube
       shell: minikube start --driver=docker
       args:
         executable: /bin/bash
+      when: not ansible_check_mode
 
     - name: Check docker version
       command: docker --version
       register: docker_check
       changed_when: false
+      failed_when: false
+      when: not ansible_check_mode
 
     - name: Check kubectl version
       command: kubectl version --client
       register: kubectl_check
       changed_when: false
+      failed_when: false
+      when: not ansible_check_mode
 
     - name: Check helm version
       command: helm version
       register: helm_check
       changed_when: false
+      failed_when: false
+      when: not ansible_check_mode
 
     - name: Check minikube status
       command: minikube status
       register: minikube_check
       changed_when: false
       failed_when: false
+      when: not ansible_check_mode
 
     - name: Show docker version
       debug:
         var: docker_check.stdout
+      when: not ansible_check_mode
 
     - name: Show kubectl version
       debug:
         var: kubectl_check.stdout
+      when: not ansible_check_mode
 
     - name: Show helm version
       debug:
         var: helm_check.stdout
+      when: not ansible_check_mode
 
     - name: Show minikube status
       debug:
         var: minikube_check.stdout
+      when: not ansible_check_mode
