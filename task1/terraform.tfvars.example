@@ -1,0 +1,5 @@
+project_prefix = "kondrasiuk"
+region         = "fra1"
+vpc_cidr       = "10.10.10.0/24"
+droplet_size   = "s-2vcpu-4gb"
+ssh_key_ids    = []
