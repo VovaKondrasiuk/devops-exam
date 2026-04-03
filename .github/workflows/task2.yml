@@ -1,0 +1,32 @@
+name: Task2 Ansible
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ansible:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Test connection
+        run: ansible all -m ping -i task2/inventory.ini
+
+      - name: Dry run (check mode)
+        run: ansible-playbook task2/playbook.yml --check
+
+      - name: Apply playbook
+        run: ansible-playbook task2/playbook.yml
