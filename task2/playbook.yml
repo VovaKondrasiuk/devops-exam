@@ -8,7 +8,7 @@
       apt:
         update_cache: yes
 
-    - name: Install dependencies
+    - name: Install required packages
       apt:
         name:
           - curl
@@ -22,25 +22,31 @@
         name: docker.io
         state: present
 
-    - name: Start Docker
-      service:
+    - name: Enable and start Docker
+      systemd:
         name: docker
         state: started
         enabled: yes
 
-    - name: Install kubectl
-      shell: |
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
-        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    - name: Add kubectl binary
+      get_url:
+        url: https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
 
-    - name: Install Minikube
-      shell: |
-        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-        install minikube-linux-amd64 /usr/local/bin/minikube
+    - name: Add Minikube binary
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: '0755'
 
     - name: Install Helm
       shell: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        executable: /bin/bash
 
     - name: Start Minikube
       shell: minikube start --driver=docker
+      args:
+        executable: /bin/bash
