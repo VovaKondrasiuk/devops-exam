@@ -2,10 +2,8 @@ provider "digitalocean" {
   token = var.do_token
 }
 
-resource "digitalocean_vpc" "main" {
-  name     = "${var.project_prefix}-vpc"
-  region   = var.region
-  ip_range = var.vpc_cidr
+data "digitalocean_vpc" "main" {
+  name = "kondrasiuk-vpc"
 }
 
 resource "digitalocean_droplet" "node" {
@@ -13,7 +11,7 @@ resource "digitalocean_droplet" "node" {
   region   = var.region
   size     = var.droplet_size
   image    = "ubuntu-24-04-x64"
-  vpc_uuid = digitalocean_vpc.main.id
+  vpc_uuid = data.digitalocean_vpc.main.id
   ssh_keys = var.ssh_key_ids
   tags     = ["${var.project_prefix}-node"]
 }
