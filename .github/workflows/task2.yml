@@ -7,6 +7,10 @@ jobs:
   ansible:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: task2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +23,7 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       - name: Disable SSH host key checking
@@ -29,11 +33,14 @@ jobs:
           echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
 
-      - name: Test connection
-        run: ansible all -m ping -i task2/inventory.ini
+      - name: Show inventory
+        run: cat inventory.ini
 
-      - name: Dry run (check mode)
-        run: ansible-playbook task2/playbook.yml --check
+      - name: Test connection
+        run: ansible all -i inventory.ini -m ping
+
+      - name: Dry run
+        run: ansible-playbook -i inventory.ini playbook.yml --check
 
       - name: Apply playbook
-        run: ansible-playbook task2/playbook.yml
+        run: ansible-playbook -i inventory.ini playbook.yml
