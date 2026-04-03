@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value = digitalocean_vpc.main.id
+  value = data.digitalocean_vpc.main.id
 }
 
 output "droplet_ip" {
