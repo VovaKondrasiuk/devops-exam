@@ -49,7 +49,7 @@
       when: not ansible_check_mode
 
     - name: Start Minikube
-      shell: minikube start --driver=docker
+      shell: minikube start --driver=docker --force
       args:
         executable: /bin/bash
       when: not ansible_check_mode
