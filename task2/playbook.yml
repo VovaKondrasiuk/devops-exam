@@ -3,8 +3,7 @@
   become: yes
 
   tasks:
-
-    - name: Update apt
+    - name: Update apt cache
       apt:
         update_cache: yes
 
@@ -15,34 +14,35 @@
           - apt-transport-https
           - ca-certificates
           - software-properties-common
+          - docker.io
         state: present
 
-    - name: Install Docker
-      apt:
-        name: docker.io
-        state: present
-
-    - name: Enable and start Docker
+    - name: Start and enable Docker
       systemd:
         name: docker
         state: started
         enabled: yes
 
-    - name: Add kubectl binary
+    - name: Download kubectl
       get_url:
         url: https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
         dest: /usr/local/bin/kubectl
         mode: '0755'
 
-    - name: Add Minikube binary
+    - name: Download Minikube
       get_url:
         url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
         dest: /usr/local/bin/minikube
         mode: '0755'
 
+    - name: Download Helm install script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
     - name: Install Helm
-      shell: |
-        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      shell: /tmp/get_helm.sh
       args:
         executable: /bin/bash
 
@@ -50,3 +50,40 @@
       shell: minikube start --driver=docker
       args:
         executable: /bin/bash
+
+    - name: Check docker version
+      command: docker --version
+      register: docker_check
+      changed_when: false
+
+    - name: Check kubectl version
+      command: kubectl version --client
+      register: kubectl_check
+      changed_when: false
+
+    - name: Check helm version
+      command: helm version
+      register: helm_check
+      changed_when: false
+
+    - name: Check minikube status
+      command: minikube status
+      register: minikube_check
+      changed_when: false
+      failed_when: false
+
+    - name: Show docker version
+      debug:
+        var: docker_check.stdout
+
+    - name: Show kubectl version
+      debug:
+        var: kubectl_check.stdout
+
+    - name: Show helm version
+      debug:
+        var: helm_check.stdout
+
+    - name: Show minikube status
+      debug:
+        var: minikube_check.stdout
