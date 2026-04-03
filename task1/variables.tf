@@ -4,6 +4,18 @@ variable "do_token" {
   sensitive   = true
 }
 
+variable "spaces_access_key_id" {
+  description = "DigitalOcean Spaces access key"
+  type        = string
+  sensitive   = true
+}
+
+variable "spaces_secret_access_key" {
+  description = "DigitalOcean Spaces secret key"
+  type        = string
+  sensitive   = true
+}
+
 variable "project_prefix" {
   description = "Prefix for resource names"
   type        = string
