@@ -16,5 +16,16 @@ echo "Checking service in namespace ${NAMESPACE}"
 kubectl get svc -n ${NAMESPACE}
 
 echo "Checking HTTP response on port ${APP_PORT}"
-curl -I http://127.0.0.1:${APP_PORT} || true
-curl http://127.0.0.1:${APP_PORT}
+for i in 1 2 3 4 5; do
+  if curl -I http://127.0.0.1:${APP_PORT}; then
+    curl http://127.0.0.1:${APP_PORT}
+    exit 0
+  fi
+  echo "Retry $i..."
+  sleep 3
+done
+
+echo "Port-forward log:"
+cat /tmp/hello-world-${NAMESPACE}-portforward.log || true
+
+exit 1
