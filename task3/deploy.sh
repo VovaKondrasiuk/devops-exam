@@ -25,7 +25,6 @@ helm lint ./helm-charts-hello-world \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
   --set image.pullPolicy=IfNotPresent \
-  --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
   --set django.debug=true \
@@ -43,7 +42,6 @@ helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
   --set image.pullPolicy=IfNotPresent \
-  --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
   --set django.debug=true \
@@ -64,7 +62,6 @@ helm upgrade --install ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
   --set image.pullPolicy=IfNotPresent \
-  --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
   --set django.debug=true \
@@ -81,8 +78,18 @@ kubectl rollout status deployment/django-hello-world -n ${NAMESPACE} --timeout=1
 
 echo "Restarting port-forward"
 pkill -f "port-forward.*${APP_PORT}:8000" || true
-nohup kubectl port-forward -n ${NAMESPACE} svc/django-hello-world-svc 0.0.0.0:${APP_PORT}:8000 >/tmp/${APP_NAME}-${NAMESPACE}-portforward.log 2>&1 &
-sleep 5
+
+nohup kubectl port-forward \
+  --address 0.0.0.0 \
+  -n ${NAMESPACE} \
+  svc/django-hello-world-svc \
+  ${APP_PORT}:8000 \
+  >/tmp/${APP_NAME}-${NAMESPACE}-portforward.log 2>&1 &
+
+sleep 8
+
+echo "Port-forward log:"
+cat /tmp/${APP_NAME}-${NAMESPACE}-portforward.log || true
 
 echo "Deployment completed"
 echo "Namespace: ${NAMESPACE}"
