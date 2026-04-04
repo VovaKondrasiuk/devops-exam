@@ -14,30 +14,73 @@ fi
 
 cd "$REPO_DIR"
 
-eval $(minikube docker-env)
+echo "Using minikube docker environment"
+eval "$(minikube docker-env)"
 
 echo "Pre-deployment checks"
 docker build -t ${APP_NAME}:${IMAGE_TAG} .
-helm lint ./helm-charts-hello-world
+
+echo "Helm lint"
+helm lint ./helm-charts-hello-world \
+  --set image.repository=${APP_NAME} \
+  --set image.tag=${IMAGE_TAG} \
+  --set image.pullPolicy=IfNotPresent \
+  --set image.pullSecret="" \
+  --set service.type=ClusterIP \
+  --set service.port=8000 \
+  --set django.debug=True \
+  --set django.allowedHosts="*" \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=default \
+  --set serviceAccount.automount=false \
+  --set ingress.enabled=false \
+  --set autoscaling.enabled=false
+
+echo "Helm template"
 helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --namespace ${NAMESPACE} \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
-  --set service.port=8000 > /tmp/${APP_NAME}-${NAMESPACE}.yaml
+  --set image.pullPolicy=IfNotPresent \
+  --set image.pullSecret="" \
+  --set service.type=ClusterIP \
+  --set service.port=8000 \
+  --set django.debug=True \
+  --set django.allowedHosts="*" \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=default \
+  --set serviceAccount.automount=false \
+  --set ingress.enabled=false \
+  --set autoscaling.enabled=false > /tmp/${APP_NAME}-${NAMESPACE}.yaml
 
+echo "Creating namespace if not exists"
 kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
+echo "Deploying with Helm"
 helm upgrade --install ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --namespace ${NAMESPACE} \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
-  --set service.port=8000
+  --set image.pullPolicy=IfNotPresent \
+  --set image.pullSecret="" \
+  --set service.type=ClusterIP \
+  --set service.port=8000 \
+  --set django.debug=True \
+  --set django.allowedHosts="*" \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=default \
+  --set serviceAccount.automount=false \
+  --set ingress.enabled=false \
+  --set autoscaling.enabled=false
 
-kubectl rollout restart deployment/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world -n ${NAMESPACE} || true
-kubectl rollout status deployment/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world -n ${NAMESPACE} --timeout=180s
+echo "Waiting for deployment"
+kubectl rollout status deployment/django-hello-world -n ${NAMESPACE} --timeout=180s
 
-pkill -f "port-forward.*${NAMESPACE}.*${APP_PORT}:8000" || true
-nohup kubectl port-forward -n ${NAMESPACE} svc/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world 0.0.0.0:${APP_PORT}:8000 > /tmp/${APP_NAME}-${NAMESPACE}-portforward.log 2>&1 &
+echo "Restarting port-forward"
+pkill -f "port-forward.*${APP_PORT}:8000" || true
+nohup kubectl port-forward -n ${NAMESPACE} svc/django-hello-world-svc 0.0.0.0:${APP_PORT}:8000 >/tmp/${APP_NAME}-${NAMESPACE}-portforward.log 2>&1 &
 sleep 5
 
 echo "Deployment completed"
+echo "Namespace: ${NAMESPACE}"
+echo "Port: ${APP_PORT}"
