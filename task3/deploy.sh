@@ -14,35 +14,30 @@ fi
 
 cd "$REPO_DIR"
 
-echo "Using minikube docker environment"
 eval $(minikube docker-env)
 
-echo "Building Docker image ${APP_NAME}:${IMAGE_TAG}"
+echo "Pre-deployment checks"
 docker build -t ${APP_NAME}:${IMAGE_TAG} .
+helm lint ./helm-charts-hello-world
+helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
+  --namespace ${NAMESPACE} \
+  --set image.repository=${APP_NAME} \
+  --set image.tag=${IMAGE_TAG} \
+  --set service.port=8000 > /tmp/${APP_NAME}-${NAMESPACE}.yaml
 
-echo "Creating namespace if not exists"
 kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
-echo "Deploying with Helm"
 helm upgrade --install ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --namespace ${NAMESPACE} \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
   --set service.port=8000
 
-echo "Restarting deployment to ensure fresh image"
 kubectl rollout restart deployment/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world -n ${NAMESPACE} || true
-
-echo "Waiting for rollout"
 kubectl rollout status deployment/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world -n ${NAMESPACE} --timeout=180s
 
-echo "Killing old port-forwards if present"
 pkill -f "port-forward.*${NAMESPACE}.*${APP_PORT}:8000" || true
-
-echo "Starting port-forward on ${APP_PORT}"
 nohup kubectl port-forward -n ${NAMESPACE} svc/${APP_NAME}-${NAMESPACE}-helm-charts-hello-world 0.0.0.0:${APP_PORT}:8000 > /tmp/${APP_NAME}-${NAMESPACE}-portforward.log 2>&1 &
 sleep 5
 
 echo "Deployment completed"
-echo "Namespace: ${NAMESPACE}"
-echo "Port: ${APP_PORT}"
