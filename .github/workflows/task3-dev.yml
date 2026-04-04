@@ -16,6 +16,7 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
           echo "Host *" > ~/.ssh/config
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
@@ -25,10 +26,20 @@ jobs:
         run: |
           ssh root@134.209.238.58 '
             set -e
+
+            echo "=== Preparing student repo on VM ==="
+            rm -rf /root/devops-exam || true
+            git clone https://github.com/VovaKondrasiuk/devops-exam.git /root/devops-exam
+
+            echo "=== Preparing application repo (develop) ==="
             rm -rf /root/devops-exam-app || true
             git clone -b develop https://github.com/YulianSalo/devops-exam-pt2.git /root/devops-exam-app
+
+            echo "=== Running task3 deploy ==="
             cd /root/devops-exam
-            chmod +x task3/deploy.sh task3/verify.sh
+            chmod +x task3/deploy.sh
+            chmod +x task3/verify.sh
+
             ./task3/deploy.sh hello-world dev develop 8002 /root/devops-exam-app
             ./task3/verify.sh dev 8002
           '
