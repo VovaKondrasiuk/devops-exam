@@ -7,6 +7,10 @@ jobs:
   deploy-release:
     runs-on: ubuntu-latest
 
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
     steps:
       - name: Checkout student repo
         uses: actions/checkout@v4
@@ -24,24 +28,27 @@ jobs:
 
       - name: Deploy release tag on VM
         run: |
-          ssh root@134.209.238.58 '
+          ssh root@134.209.238.58 "
             set -e
 
-            echo "=== Preparing student repo on VM ==="
+            export DOCKER_USERNAME='${DOCKER_USERNAME}'
+            export DOCKER_PASSWORD='${DOCKER_PASSWORD}'
+
+            echo '=== Preparing student repo on VM ==='
             rm -rf /root/devops-exam || true
             git clone https://github.com/VovaKondrasiuk/devops-exam.git /root/devops-exam
 
-            echo "=== Preparing application repo (release 1.0.0) ==="
+            echo '=== Preparing application repo (release 1.0.0) ==='
             rm -rf /root/devops-exam-app || true
             git clone https://github.com/YulianSalo/devops-exam-pt2.git /root/devops-exam-app
             cd /root/devops-exam-app
             git checkout tags/1.0.0
 
-            echo "=== Running task3 deploy ==="
+            echo '=== Running task3 deploy ==='
             cd /root/devops-exam
             chmod +x task3/deploy.sh
             chmod +x task3/verify.sh
 
             ./task3/deploy.sh hello-world release 1.0.0 8003 /root/devops-exam-app
             ./task3/verify.sh release 8003
-          '
+          "
