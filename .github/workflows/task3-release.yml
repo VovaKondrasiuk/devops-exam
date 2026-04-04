@@ -1,0 +1,36 @@
+name: Task3 Release Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout student repo
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host *" > ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy release tag on VM
+        run: |
+          ssh root@134.209.238.58 '
+            set -e
+            rm -rf /root/devops-exam-app || true
+            git clone https://github.com/YulianSalo/devops-exam-pt2.git /root/devops-exam-app
+            cd /root/devops-exam-app
+            git checkout tags/1.0.0
+            cd /root/devops-exam
+            chmod +x task3/deploy.sh task3/verify.sh
+            ./task3/deploy.sh hello-world release 1.0.0 8003 /root/devops-exam-app
+            ./task3/verify.sh release 8003
+          '
