@@ -28,13 +28,14 @@ helm lint ./helm-charts-hello-world \
   --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
-  --set django.debug=True \
+  --set django.debug=true \
   --set django.allowedHosts="*" \
   --set serviceAccount.create=false \
   --set serviceAccount.name=default \
   --set serviceAccount.automount=false \
   --set ingress.enabled=false \
-  --set autoscaling.enabled=false
+  --set autoscaling.enabled=false \
+  --set httpRoute.enabled=false
 
 echo "Helm template"
 helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
@@ -45,13 +46,14 @@ helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
-  --set django.debug=True \
+  --set django.debug=true \
   --set django.allowedHosts="*" \
   --set serviceAccount.create=false \
   --set serviceAccount.name=default \
   --set serviceAccount.automount=false \
   --set ingress.enabled=false \
-  --set autoscaling.enabled=false > /tmp/${APP_NAME}-${NAMESPACE}.yaml
+  --set autoscaling.enabled=false \
+  --set httpRoute.enabled=false > /tmp/${APP_NAME}-${NAMESPACE}.yaml
 
 echo "Creating namespace if not exists"
 kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
@@ -65,13 +67,14 @@ helm upgrade --install ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
   --set image.pullSecret="" \
   --set service.type=ClusterIP \
   --set service.port=8000 \
-  --set django.debug=True \
+  --set django.debug=true \
   --set django.allowedHosts="*" \
   --set serviceAccount.create=false \
   --set serviceAccount.name=default \
   --set serviceAccount.automount=false \
   --set ingress.enabled=false \
-  --set autoscaling.enabled=false
+  --set autoscaling.enabled=false \
+  --set httpRoute.enabled=false
 
 echo "Waiting for deployment"
 kubectl rollout status deployment/django-hello-world -n ${NAMESPACE} --timeout=180s
