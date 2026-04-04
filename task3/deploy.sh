@@ -12,6 +12,8 @@ if [ -z "$APP_NAME" ] || [ -z "$NAMESPACE" ] || [ -z "$IMAGE_TAG" ] || [ -z "$AP
   exit 1
 fi
 
+RELEASE_NAME="${APP_NAME}-${NAMESPACE}"
+
 cd "$REPO_DIR"
 
 echo "Using minikube docker environment"
@@ -37,7 +39,7 @@ helm lint ./helm-charts-hello-world \
   --set httpRoute.enabled=false
 
 echo "Helm template"
-helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
+helm template ${RELEASE_NAME} ./helm-charts-hello-world \
   --namespace ${NAMESPACE} \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
@@ -56,8 +58,17 @@ helm template ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
 echo "Creating namespace if not exists"
 kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
-echo "Deploying with Helm"
-helm upgrade --install ${APP_NAME}-${NAMESPACE} ./helm-charts-hello-world \
+echo "Deleting previous release if exists"
+helm uninstall ${RELEASE_NAME} -n ${NAMESPACE} || true
+kubectl delete deployment django-hello-world -n ${NAMESPACE} --ignore-not-found=true
+kubectl delete service django-hello-world-svc -n ${NAMESPACE} --ignore-not-found=true
+kubectl delete secret sh.helm.release.v1.${RELEASE_NAME}.v1 -n ${NAMESPACE} --ignore-not-found=true
+kubectl delete secret sh.helm.release.v1.${RELEASE_NAME}.v2 -n ${NAMESPACE} --ignore-not-found=true
+kubectl delete secret sh.helm.release.v1.${RELEASE_NAME}.v3 -n ${NAMESPACE} --ignore-not-found=true
+sleep 5
+
+echo "Installing release"
+helm install ${RELEASE_NAME} ./helm-charts-hello-world \
   --namespace ${NAMESPACE} \
   --set image.repository=${APP_NAME} \
   --set image.tag=${IMAGE_TAG} \
